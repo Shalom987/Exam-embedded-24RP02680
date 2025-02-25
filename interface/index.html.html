@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script>
+        async function loadDashboard() {
+            let house = sessionStorage.getItem("house");
+            if (!house) {
+                window.location.href = "index.html"; // Redirect to login if no house info
+                return;
+            }
+
+            // Fetch data from the Apps Script
+            const response = await fetch("https://script.google.com/macros/s/AKfycbweWUCuE_YOyuMSAbH9a14wKk-Bo-N6LYFJfWeeEIKZY-ijHeqECvkmculXijYdGAiXrQ/exec?action=getDashboard&house=" + house);
+            const data = await response.json();
+
+            if (data.success) {
+                // Display balance and daily limit for the latest entry
+                document.getElementById("balance").innerText = "Balance: " + data.latestData[0][1];
+                document.getElementById("dailyLimit").innerText = "Daily Limit: " + data.latestData[0][2];
+
+                // Display the latest 5 data entries in the table
+                const tableBody = document.getElementById("dataTableBody");
+                tableBody.innerHTML = ""; // Clear existing data
+                data.latestData.forEach(function(row) {
+                    const newRow = document.createElement("tr");
+                    const timestamp = new Date(row[3]).toLocaleString(); // Format the timestamp
+                    newRow.innerHTML = `
+                        <td>${timestamp}</td> <!-- Timestamp -->
+                        <td>${row[1]}</td> <!-- Balance -->
+                        <td>${row[2]}</td> <!-- Daily Limit -->
+                    `;
+                    tableBody.appendChild(newRow);
+                });
+            } else {
+                alert("Error loading data!");
+            }
+        }
+
+        async function updateLimit() {
+            let house = sessionStorage.getItem("house");
+            let newLimit = document.getElementById("newLimit").value;
+
+            const response = await fetch(`https://script.google.com/macros/s/AKfycbweWUCuE_YOyuMSAbH9a14wKk-Bo-N6LYFJfWeeEIKZY-ijHeqECvkmculXijYdGAiXrQ/exec?action=updateLimit&house=${house}&newLimit=${newLimit}`);
+            const data = await response.json();
+
+            if (data.success) {
+                alert("Daily limit updated!");
+                loadDashboard();
+            } else {
+                alert("Failed to update!");
+            }
+        }
+
+        async function topUpBalance() {
+            let house = sessionStorage.getItem("house");
+            let amount = document.getElementById("topUpAmount").value;
+
+            const response = await fetch(`https://script.google.com/macros/s/AKfycbweWUCuE_YOyuMSAbH9a14wKk-Bo-N6LYFJfWeeEIKZY-ijHeqECvkmculXijYdGAiXrQ/exec?action=topup&house=${house}&amount=${amount}`);
+            const data = await response.json();
+
+            if (data.success) {
+                alert("Balance updated!");
+                loadDashboard();
+            } else {
+                alert("Failed to update balance!");
+            }
+        }
+    </script>
+</head>
+
+<body onload="loadDashboard()">
+    <h2>Dashboard</h2>
+    <p id="balance"></p>
+    <p id="dailyLimit"></p>
+
+    <h3>Set Daily Limit</h3>
+    <input type="number" id="newLimit">
+    <button onclick="updateLimit()">Update</button>
+
+    <h3>Top Up Balance</h3>
+    <input type="number" id="topUpAmount">
+    <button onclick="topUpBalance()">Top Up</button>
+
+    <h3>Latest Data</h3>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Balance</th>
+                <th>Daily Limit</th>
+            </tr>
+        </thead>
+        <tbody id="dataTableBody">
+            <!-- Latest data will be inserted here -->
+        </tbody>
+    </table>
+</body>
+
+</html>

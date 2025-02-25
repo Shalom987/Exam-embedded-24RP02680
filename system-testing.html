@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Balance Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const scriptURL = "https://script.google.com/macros/s/AKfycbxlmRvEpsYV7X7H3gU3vPFicqfryLE5i7lqRP_KF8jk5EUF7vgpwEVMf1KU0Mdn_5G-/exec";
+
+        // Fetch balance for house "2" by default when page loads
+        async function loadHouseData(houseName = "2") {
+            const resultDiv = document.getElementById("balanceResult");
+
+            try {
+                const response = await fetch(`${scriptURL}?house=${encodeURIComponent(houseName)}`);
+                const data = await response.json();
+
+                if (data.balance !== undefined) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>House:</strong> ${houseName} <br>
+                            <strong>Balance:</strong> ${data.balance} <br>
+                            <strong>Last Updated:</strong> ${data.date}
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">House not found.</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error fetching data.</div>`;
+            }
+        }
+
+        // Fetch and display all house data
+        async function loadAllData() {
+            try {
+                const response = await fetch(scriptURL);
+                const data = await response.json();
+
+                let tableBody = document.getElementById("dataTableBody");
+                tableBody.innerHTML = "";
+
+                let totalBalance = 0;
+                let lastUpdate = "N/A";
+
+                data.forEach(row => {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${row.date}</td> <!-- Display date & time -->
+                            <td>${row.house}</td>
+                            <td>${row.balance}</td>
+                        </tr>`;
+                    totalBalance += parseFloat(row.balance);
+                    lastUpdate = row.date;
+                });
+
+                document.getElementById("totalHouses").innerText = data.length;
+                document.getElementById("totalBalance").innerText = `$${totalBalance.toFixed(2)}`;
+                document.getElementById("lastUpdate").innerText = lastUpdate;
+
+            } catch (error) {
+                console.error("Error loading data:", error);
+            }
+        }
+
+        // Search for balance based on house input
+        async function getBalance() {
+            const houseName = document.getElementById("houseInput").value;
+            const resultDiv = document.getElementById("balanceResult");
+
+            if (!houseName) {
+                resultDiv.innerHTML = `<div class="alert alert-warning">Please enter a house name or number.</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${scriptURL}?house=${encodeURIComponent(houseName)}`);
+                const data = await response.json();
+
+                if (data.balance !== undefined) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>House:</strong> ${houseName} <br>
+                            <strong>Balance:</strong> ${data.balance} <br>
+                            <strong>Last Updated:</strong> ${data.date}
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">House not found.</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error fetching data.</div>`;
+            }
+        }
+
+        // Load house data for "2" on page load
+        window.onload = () => {
+            loadHouseData("2");
+            loadAllData(); // Load all records to display in table
+        };
+    </script>
+</head>
+
+<body class="bg-light">
+
+    <div class="container my-4">
+        <h2 class="text-center mb-4">🏠 House Balance Dashboard</h2>
+
+        <!-- Summary Cards -->
+        <div class="row text-center mb-4">
+            <div class="col-md-4">
+                <div class="card shadow p-3">
+                    <h5>Total Houses</h5>
+                    <h3 id="totalHouses">0</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow p-3">
+                    <h5>Total Balance</h5>
+                    <h3 id="totalBalance">$0.00</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow p-3">
+                    <h5>Last Update</h5>
+                    <h3 id="lastUpdate">N/A</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search House Balance -->
+        <div class="card shadow p-4 mb-4">
+            <h4>🔍 Check House Balance</h4>
+            <div class="input-group mb-3">
+                <input type="text" id="houseInput" class="form-control" placeholder="Enter house name or number (e.g. 2)">
+                <button class="btn btn-primary" onclick="getBalance()">Get Balance</button>
+            </div>
+            <div id="balanceResult"></div>
+        </div>
+
+        <!-- Water Consumption and Limit -->
+        <div class="card shadow p-4 mb-4">
+            <h4>💧 Daily Water Consumption</h4>
+            <div class="mb-3">
+                <label for="currentConsumption" class="form-label">Current Water Consumption (L):</label>
+                <input type="number" id="currentConsumption" class="form-control" value="0" disabled>
+            </div>
+            <div class="mb-3">
+                <label for="maxLimit" class="form-label">Set Maximum Daily Consumption Limit (L):</label>
+                <input type="number" id="maxLimit" class="form-control" placeholder="Set limit" min="1">
+            </div>
+            <button class="btn btn-primary" onclick="setConsumptionLimit()">Set Limit</button>
+            <div id="limitResult" class="mt-2"></div>
+        </div>
+
+        <!-- Table of All Data -->
+        <div class="card shadow p-4">
+            <h4>📊 House Balance Records</h4>
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>House</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function setConsumptionLimit() {
+            const maxLimit = document.getElementById("maxLimit").value;
+            if (maxLimit && maxLimit > 0) {
+                document.getElementById("limitResult").innerHTML = `<div class="alert alert-success">Daily consumption limit set to ${maxLimit}L.</div>`;
+            } else {
+                document.getElementById("limitResult").innerHTML = `<div class="alert alert-danger">Please enter a valid limit.</div>`;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
