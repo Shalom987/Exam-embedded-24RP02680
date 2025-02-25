@@ -27,7 +27,7 @@ The project simulation involves:
 - **Google Cloud Database:** Stores user balances and water usage records.
 
 ## System Deployment
-- **Hosted on GitHub Pages:** [GitHub Hosted Link](your-github-hosted-link-here)
+- **Hosted on GitHub Pages:** [GitHub Hosted Link](https://shalom987.github.io/Exam-embedded-24RP02680/)
 - **Future Enhancements:** The system will be further improved by transitioning from Wokwi to Proteus, integrating a flow sensor, keypad entry, and LCD for real-time monitoring.
 
 ## Future Improvements
